@@ -8,37 +8,28 @@ page = requests.get(url)
 contents = page.content
 
 soup = BeautifulSoup(contents,"lxml")
-# locate the result list
-resultList = str( soup.find(string=re.compile("IS24.resultList")) )
-resultList = resultList.strip()
 
-# locate resultListModel
-idx0 = resultList.find('resultListModel:')
-idx1 = resultList.find('numberOfHits:')
-resultListModel = resultList[idx0:idx1] 
-# locate resultListEntry
-idx0 = resultListModel.find('resultlistEntry')
-resultListEntry = resultListModel[idx0:]
-# number of estates found 
-numEstate = resultListEntry.count('realEstateId')
-# estates in a list
-estates = resultListEntry.split('realEstateId')
-del estates[0]
+containers = soup.findAll("div", {"class":"grid-item result-list-entry__data-container"})
 
-for estate in estates:
-    idx_title = estate.find('\"title\"')
-    idx_addr  = estate.find('\"address\"')
-    idx_addre = estate.find('\"companyWideCustomerId\"')
-    idx_price = estate.find('\"price\"')
-    idx_pricee= estate.find('\"realEstateTags\"')
-    print(estate[idx_title: idx_addr])
-    print(estate[idx_addr: idx_addre])
-    print(estate[idx_price: idx_pricee])
-    print('=====================================')
+filename = "immoList.csv"
+f = open(filename, "w")
+header = "title, address, price, footage, numOfRooms, estate\n"
+f.write(header)
 
-'''
-print(soup.find("script", attrs={"type":False}))
+for container in containers :
+    title = container.div.a.text
+    divAddr = container.findAll("div",{"class":"result-list-entry__address"})
+    addr = divAddr[0].a.text
+    divPremiumCriteria = container.findAll("dl", {"class":"grid-item result-list-entry__primary-criterion "})
+    divPrice = divPremiumCriteria[0]
+    divFootage = divPremiumCriteria[1]
+    divNumRooms = divPremiumCriteria[2]
+    price = divPrice.dd.text
+    footage = divFootage.dd.text
+    numRooms = divNumRooms.dd.text
+    dlEstate = container.findAll("dl", {"class":"grid-item result-list-entry__primary-criterion gt3" })
+    estate = dlEstate[0].dd.text
 
-for link in soup.find_all('a'):
-    print(link.get('href'))
-'''
+    f.write(title.replace(",","-") + "," + addr.replace(",","-") + "," + price.replace(",","-") + "," + footage.replace(",","-") + "," + numRooms.replace(",","-") + "," + estate.replace(",","-") + "\n")
+
+f.close()
